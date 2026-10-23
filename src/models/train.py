@@ -26,16 +26,13 @@ from xgboost import XGBClassifier
 
 from src.features.transform import FEATURE_COLUMNS
 from src.models import evaluate as ev
+from src.models.registry import ALIAS, DATA_PATH, MODEL_NAME, TRACKING_URI
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = ROOT / "data" / "processed" / "features.parquet"
-TRACKING_URI = f"sqlite:///{(ROOT / 'mlflow.db').as_posix()}"
 EXPERIMENT = "bank-churn"
-MODEL_NAME = "bank-churn-model"
-ALIAS = "champion"
 
 SEED = 42
 N_SPLITS = 5

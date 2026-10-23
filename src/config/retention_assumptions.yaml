@@ -1,0 +1,43 @@
+# =============================================================================
+# ASSUMPTIONS, NOT FACTS.
+# Every number below is an illustrative placeholder chosen so the analysis can run.
+# None comes from the bank or from the dataset. Replace them with the bank's real
+# figures before using the results for any decision.
+# All money amounts are in "units" (the dataset states no currency).
+# =============================================================================
+
+units: units
+
+# Annual value of a customer to the bank:
+#   customer_value = Balance x net_interest_margin + NumOfProducts x annual_fee_per_product
+# A saved customer is credited with ONE year of this value (conservative: no lifetime value).
+
+# Expected net benefit of contacting one customer:
+#   p_churn x retention_success_rate x customer_value - offer_cost
+
+# retention_success_rate is the share of contacted would-be churners the offer actually saves.
+# It is an ASSUMPTION: the dataset has no treatment/control data, so the model predicts churn
+# risk, not how a customer would respond to an offer.
+
+scenarios:
+  best:                               # optimistic case
+    net_interest_margin: 0.035        # ASSUMPTION: annual margin earned on the balance
+    annual_fee_per_product: 60        # ASSUMPTION: units per product per year
+    offer_cost: 40                    # ASSUMPTION: units per customer contacted
+    retention_success_rate: 0.30      # ASSUMPTION
+  base:                               # deliberately conservative
+    net_interest_margin: 0.025
+    annual_fee_per_product: 40
+    offer_cost: 100
+    retention_success_rate: 0.15
+  worst:                              # stress case, set on purpose to be near break-even:
+    net_interest_margin: 0.015        # on these inputs only a handful of very high-value,
+    annual_fee_per_product: 20        # very high-risk customers are worth contacting, and
+    offer_cost: 150                   # any fixed-size campaign (e.g. top 10% by risk) loses money
+    retention_success_rate: 0.08
+
+# Contact capacity: the team can contact at most this share of customers.
+# ASSUMPTION: an operational limit, not derived from data.
+capacity:
+  default_share: 0.10
+  shown_shares: [0.10, 0.15]
