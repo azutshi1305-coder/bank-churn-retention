@@ -1,0 +1,12 @@
+pandas
+duckdb
+pyspark
+scikit-learn
+xgboost
+mlflow
+shap
+fastapi
+uvicorn
+pydantic
+pytest
+jupyter
