@@ -1,0 +1,122 @@
+{
+  "features": [
+    {
+      "name": "CreditScore",
+      "dtype": "int64",
+      "kind": "raw"
+    },
+    {
+      "name": "Age",
+      "dtype": "int64",
+      "kind": "raw"
+    },
+    {
+      "name": "Tenure",
+      "dtype": "int64",
+      "kind": "raw"
+    },
+    {
+      "name": "Balance",
+      "dtype": "float64",
+      "kind": "raw"
+    },
+    {
+      "name": "NumOfProducts",
+      "dtype": "int64",
+      "kind": "raw"
+    },
+    {
+      "name": "HasCrCard",
+      "dtype": "int64",
+      "kind": "raw"
+    },
+    {
+      "name": "IsActiveMember",
+      "dtype": "int64",
+      "kind": "raw"
+    },
+    {
+      "name": "EstimatedSalary",
+      "dtype": "float64",
+      "kind": "raw"
+    },
+    {
+      "name": "Geography_France",
+      "dtype": "int64",
+      "kind": "one_hot"
+    },
+    {
+      "name": "Geography_Germany",
+      "dtype": "int64",
+      "kind": "one_hot"
+    },
+    {
+      "name": "Geography_Spain",
+      "dtype": "int64",
+      "kind": "one_hot"
+    },
+    {
+      "name": "Gender_Female",
+      "dtype": "int64",
+      "kind": "one_hot"
+    },
+    {
+      "name": "Gender_Male",
+      "dtype": "int64",
+      "kind": "one_hot"
+    },
+    {
+      "name": "zero_balance",
+      "dtype": "int64",
+      "kind": "engineered",
+      "description": "1 if the account balance is exactly 0."
+    },
+    {
+      "name": "balance_to_salary",
+      "dtype": "float64",
+      "kind": "engineered",
+      "description": "Balance / EstimatedSalary: how much of their income the customer keeps in the bank."
+    },
+    {
+      "name": "products_per_tenure",
+      "dtype": "float64",
+      "kind": "engineered",
+      "description": "NumOfProducts / (Tenure + 1): product uptake per year of relationship; +1 keeps tenure 0 finite."
+    },
+    {
+      "name": "is_senior",
+      "dtype": "int64",
+      "kind": "engineered",
+      "description": "1 if Age >= 50 (the highest-churn age band in EDA)."
+    },
+    {
+      "name": "active_x_products",
+      "dtype": "int64",
+      "kind": "engineered",
+      "description": "IsActiveMember * NumOfProducts: product depth, counted only for active members."
+    }
+  ],
+  "target": "Exited",
+  "split_column": "split",
+  "split": {
+    "method": "exact stratified on Exited, ordered by seeded hash of CustomerId",
+    "train_fraction": 0.8,
+    "seed": 42,
+    "values": [
+      "train",
+      "test"
+    ]
+  },
+  "categories": {
+    "Geography": [
+      "France",
+      "Germany",
+      "Spain"
+    ],
+    "Gender": [
+      "Female",
+      "Male"
+    ]
+  },
+  "notes": "Identifiers dropped. No scaling applied; fit scalers on the train split only."
+}
