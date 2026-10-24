@@ -1,10 +1,14 @@
-"""Stage 4: train, select, calibrate, evaluate and register the churn model.
+"""Train, select, calibrate, evaluate and register the churn model. This is the documented way to rebuild the champion.
 
-Run from the repo root:  python -m src.models.train
+Run from the repo root:
+    python -m src.models.train                 # logs to experiment "bank-churn", registers a new model version, moves the alias
+    python -m src.models.train --no-register   # dry run: logs to "bank-churn-dryrun" only, registers nothing, moves no alias,
+                                               # then checks the rebuilt champion against the registered one
 
 Order matters: tuning and selection use the train split only. The test split is loaded inside
 final_evaluation(), after the champion has been chosen and calibrated.
 """
+import argparse
 from pathlib import Path
 
 import matplotlib
@@ -25,13 +29,14 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
 from src.models import evaluate as ev
-from src.models.registry import ALIAS, MODEL_NAME, TRACKING_URI, load_split
+from src.models.registry import ALIAS, MODEL_NAME, TRACKING_URI, load_champion, load_split
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPERIMENT = "bank-churn"
+DRYRUN_EXPERIMENT = "bank-churn-dryrun"  # dry runs never touch EXPERIMENT: notebooks look runs up by name there
 
 SEED = 42
 N_SPLITS = 5
@@ -47,6 +52,25 @@ TRUSTED_TYPES = [
     "xgboost.core.Booster", "xgboost.sklearn.XGBClassifier",
 ]
 LABELS = {"logistic_regression": "Logistic regression", "random_forest": "Random forest", "xgboost": "XGBoost"}
+
+
+def ensure_experiment(name):
+    mlflow.set_tracking_uri(TRACKING_URI)
+    if mlflow.get_experiment_by_name(name) is None:
+        mlflow.create_experiment(name, artifact_location=(ROOT / "mlruns").as_uri())
+    mlflow.set_experiment(name)
+
+
+def reproduction_check(y, p_rebuilt, p_registered, tol=5e-5):
+    """Compare a rebuilt model with the registered champion on the same test rows. True if ROC-AUC, PR-AUC and Brier agree to 4 dp."""
+    new, ref = ev.score_all(y, p_rebuilt), ev.score_all(y, p_registered)
+    rows = {m: {"rebuilt": new[m], "registered": ref[m], "abs diff": abs(new[m] - ref[m])} for m in ("roc_auc", "pr_auc", "brier")}
+    print("\nReproduction check against the registered champion (test split):")
+    print(pd.DataFrame(rows).T.round(6).to_string())
+    print(f"max |probability difference| = {np.abs(np.asarray(p_rebuilt) - np.asarray(p_registered)).max():.2e}")
+    ok = all(r["abs diff"] < tol for r in rows.values())
+    print("REPRODUCED" if ok else "DOES NOT REPRODUCE")
+    return ok
 
 
 def make_searches(scale_pos_weight, cv):
@@ -116,8 +140,9 @@ def log_model_run(name, estimator, X_sample, y, p, params, cv_metrics, tags, ci,
         return test_metrics, info
 
 
-def final_evaluation(fitted, champion_key, calibrated, calib_method, X_train, searches, summaries):
-    """First and only use of the test split."""
+def final_evaluation(fitted, champion_key, calibrated, calib_method, X_train, searches, summaries, register=True):
+    """First and only use of the test split. With register=False nothing is registered and the alias is not moved;
+    the rebuilt champion is checked against the registered one instead."""
     X_test, y_test = load_split("test")
     rows = []
     probs = {k: m.predict_proba(X_test)[:, 1] for k, m in fitted.items()}
@@ -141,7 +166,7 @@ def final_evaluation(fitted, champion_key, calibrated, calib_method, X_train, se
         {"model_type": champion_key, "calibrated": True, "calibration_method": calib_method,
          "calibration_cv_folds": N_SPLITS, **clean_params(searches[champion_key].best_params_)},
         summaries[champion_key], {"stage": "4", "role": "champion", "model_type": champion_key}, cis[cal_key],
-        curves={"Before calibration": probs[champion_key], "After calibration": p_cal}, register=True)
+        curves={"Before calibration": probs[champion_key], "After calibration": p_cal}, register=register)
     rows.append({"model": f"{LABELS[champion_key]} (calibrated)", **summaries[champion_key],
                  **{f"test_{k}": v for k, v in metrics.items()},
                  **{f"test_{m}_ci_{s}": v for m, c in cis[cal_key].items() for s, v in zip(("low", "high"), c)}})
@@ -160,17 +185,17 @@ def final_evaluation(fitted, champion_key, calibrated, calib_method, X_train, se
     for m, (mean, lo, hi) in paired.items():
         print(f"  {m:8s} {mean:+.4f}  95% CI [{lo:+.4f}, {hi:+.4f}]")
 
-    client = MlflowClient()
-    client.set_registered_model_alias(MODEL_NAME, ALIAS, info.registered_model_version)
-    print(f"registered {MODEL_NAME} v{info.registered_model_version} with alias '{ALIAS}'")
+    if register:
+        MlflowClient().set_registered_model_alias(MODEL_NAME, ALIAS, info.registered_model_version)
+        print(f"registered {MODEL_NAME} v{info.registered_model_version} with alias '{ALIAS}'")
+    else:
+        print(f"\ndry run: nothing registered, alias '{ALIAS}' not moved")
+        reproduction_check(y_test, p_cal, load_champion().predict_proba(X_test)[:, 1])
     return pd.DataFrame(rows)
 
 
-def main():
-    mlflow.set_tracking_uri(TRACKING_URI)
-    if mlflow.get_experiment_by_name(EXPERIMENT) is None:
-        mlflow.create_experiment(EXPERIMENT, artifact_location=(ROOT / "mlruns").as_uri())
-    mlflow.set_experiment(EXPERIMENT)
+def main(register=True):
+    ensure_experiment(EXPERIMENT if register else DRYRUN_EXPERIMENT)
 
     X_train, y_train = load_split("train")
     cv = StratifiedKFold(n_splits=N_SPLITS, shuffle=True, random_state=SEED)
@@ -197,7 +222,7 @@ def main():
                            "selected_model": champion_key, "calibration_method": calib_method})
         mlflow.log_metrics({f"calibration_cv_brier_{m}": b for m, b in briers.items()})
 
-        table = final_evaluation(fitted, champion_key, calibrated, calib_method, X_train, searches, summaries)
+        table = final_evaluation(fitted, champion_key, calibrated, calib_method, X_train, searches, summaries, register)
 
     shown = table.set_index("model")[[
         "cv_pr_auc_mean", "cv_roc_auc_mean", "test_roc_auc", "test_pr_auc", "test_brier",
@@ -212,4 +237,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--no-register", action="store_true",
+                        help='dry run: log to the separate "bank-churn-dryrun" experiment, register nothing, do not move the '
+                             "champion alias, and check the rebuilt champion against the registered one")
+    main(register=not parser.parse_args().no_register)

@@ -1,11 +1,16 @@
 """Gender ablation: the no-Gender XGBoost setup compared with registered v1 (the original with-Gender champion).
 
-Run from the repo root:  python -m src.models.ablation
+Run from the repo root:
+    python -m src.models.ablation                 # logs to experiment "bank-churn"
+    python -m src.models.ablation --no-register   # dry run: logs to "bank-churn-dryrun" instead and checks that the rebuilt
+                                                  # no-Gender model reproduces the registered champion
 
 Same train/test split, same XGBoost search space and seed, same calibration choice and bootstrap as
 src/models/train.py. Logged to MLflow as its own run; registry aliases are not touched. This is the analysis
 that led to promoting the no-Gender model (v2) to champion; src/models/promote.py does the promotion.
 """
+import argparse
+
 import mlflow
 import pandas as pd
 from mlflow import MlflowClient
@@ -15,18 +20,17 @@ from sklearn.model_selection import StratifiedKFold
 
 from src.features.transform import AUDIT_COLUMNS, ENGINEERED, ONE_HOT, RAW_NUMERIC
 from src.models import evaluate as ev
-from src.models.registry import ALIAS, MODEL_NAME, TRACKING_URI, load_model_version, load_split
-from src.models.train import (EXPERIMENT, N_BOOTSTRAP, N_SPLITS, SEED, choose_calibration, clean_params, cv_summary,
-                              log_model_run, make_searches)
+from src.models.registry import ALIAS, MODEL_NAME, load_champion, load_model_version, load_split
+from src.models.train import (DRYRUN_EXPERIMENT, EXPERIMENT, N_BOOTSTRAP, N_SPLITS, SEED, choose_calibration, clean_params,
+                              cv_summary, ensure_experiment, log_model_run, make_searches, reproduction_check)
 
 GENDER_COLUMNS = AUDIT_COLUMNS
 LEGACY_V1_COLUMNS = RAW_NUMERIC + ONE_HOT + AUDIT_COLUMNS + ENGINEERED  # the 18-column order v1 was trained on
 RUN_NAME = "stage5-gender-ablation"
 
 
-def main():
-    mlflow.set_tracking_uri(TRACKING_URI)
-    mlflow.set_experiment(EXPERIMENT)
+def main(register=True):
+    ensure_experiment(EXPERIMENT if register else DRYRUN_EXPERIMENT)
     client = MlflowClient()
     alias_version_before = client.get_model_version_by_alias(MODEL_NAME, ALIAS).version
 
@@ -68,6 +72,13 @@ def main():
     print(f"\nTest set, paired bootstrap ({N_BOOTSTRAP} resamples), model without Gender minus v1 (with Gender):")
     print(pd.DataFrame(rows).set_index("metric").round(4).to_string())
 
+    if not register:
+        reproduction_check(y_test, p_ablation, load_champion().predict_proba(X_test)[:, 1])
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--no-register", action="store_true",
+                        help='dry run: log to the separate "bank-churn-dryrun" experiment instead of "bank-churn" and check the '
+                             "rebuilt no-Gender model against the registered champion")
+    main(register=not parser.parse_args().no_register)
