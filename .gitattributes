@@ -1,0 +1,5 @@
+# Container and shell files must keep LF line endings, even on Windows with core.autocrlf=true:
+# a CRLF in a Dockerfile or a shell script (including the EC2 user-data template) breaks it on Linux.
+Dockerfile        text eol=lf
+*.sh              text eol=lf
+scripts/aws/*     text eol=lf
