@@ -24,9 +24,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
-from src.features.transform import FEATURE_COLUMNS
 from src.models import evaluate as ev
-from src.models.registry import ALIAS, DATA_PATH, MODEL_NAME, TRACKING_URI
+from src.models.registry import ALIAS, MODEL_NAME, TRACKING_URI, load_split
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -37,8 +36,7 @@ EXPERIMENT = "bank-churn"
 SEED = 42
 N_SPLITS = 5
 N_BOOTSTRAP = 1000
-TARGET = "Exited"
-REFERENCE_DUMMIES = ["Geography_France", "Gender_Female"]
+REFERENCE_DUMMIES = ["Geography_France"]
 SCORING = {"pr_auc": "average_precision", "roc_auc": "roc_auc"}
 # skops (MLflow's default sklearn format) refuses unknown types. These are the only ones our own models use,
 # reviewed from skops.io.get_untrusted_types; all come from scikit-learn / xgboost.
@@ -49,12 +47,6 @@ TRUSTED_TYPES = [
     "xgboost.core.Booster", "xgboost.sklearn.XGBClassifier",
 ]
 LABELS = {"logistic_regression": "Logistic regression", "random_forest": "Random forest", "xgboost": "XGBoost"}
-
-
-def load_split(name):
-    df = pd.read_parquet(DATA_PATH)
-    part = df[df["split"] == name]
-    return part[FEATURE_COLUMNS].reset_index(drop=True), part[TARGET].to_numpy()
 
 
 def make_searches(scale_pos_weight, cv):

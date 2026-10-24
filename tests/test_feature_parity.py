@@ -5,7 +5,7 @@ import pytest
 
 from src.features import build_features as bf
 from src.features.transform import (
-    FEATURE_COLUMNS, FEATURE_DTYPES, GENDERS, GEOGRAPHIES, ONE_HOT, transform,
+    AUDIT_COLUMNS, FEATURE_COLUMNS, FEATURE_DTYPES, GEOGRAPHIES, ONE_HOT, audit_columns, transform,
 )
 
 
@@ -32,6 +32,19 @@ def test_spark_and_pandas_features_are_identical(spark, raw):
     pd.testing.assert_frame_equal(spark_feats, pandas_feats, check_exact=True)
 
 
+def test_spark_and_pandas_audit_columns_are_identical(spark, raw):
+    spark_audit = (bf.add_features(bf.read_raw(spark).withColumn("CustomerId", bf.F.col("CustomerId").cast("long")))
+                   .select("CustomerId", *AUDIT_COLUMNS).toPandas().set_index("CustomerId").sort_index())
+    pandas_audit = audit_columns(raw.set_index("CustomerId")).sort_index()
+    pd.testing.assert_frame_equal(spark_audit, pandas_audit, check_exact=True)
+
+
+def test_gender_is_not_a_model_feature(raw):
+    assert not any(c.startswith("Gender") for c in FEATURE_COLUMNS)
+    assert not any(c.startswith("Gender") for c in transform(raw).columns)
+    assert AUDIT_COLUMNS == ["Gender_Female", "Gender_Male"]
+
+
 def test_dtypes_match_schema_file(raw):
     schema = json.loads(bf.SCHEMA_PATH.read_text())
     assert [f["name"] for f in schema["features"]] == FEATURE_COLUMNS
@@ -50,7 +63,8 @@ def test_tenure_zero_is_finite_and_formulas(raw):
     assert f["zero_balance"] == 1 and f["balance_to_salary"] == 0.0
     assert f["is_senior"] == 1                      # Age >= 50 is inclusive
     assert f["active_x_products"] == 3
-    assert f["Geography_Germany"] == 1 and f["Geography_France"] == 0 and f["Gender_Female"] == 1
+    assert f["Geography_Germany"] == 1 and f["Geography_France"] == 0
+    assert "Gender_Female" not in f.index          # Gender is read upstream and ignored
     assert transform(raw)["products_per_tenure"].replace([float("inf")], float("nan")).notna().all()
 
 
@@ -60,7 +74,7 @@ def test_unseen_category_gives_all_zero_one_hot():
         "Balance": 1000.0, "NumOfProducts": 1, "HasCrCard": 0, "IsActiveMember": 0, "EstimatedSalary": 40000.0,
     }])
     assert transform(row)[ONE_HOT].iloc[0].sum() == 0
-    assert len(ONE_HOT) == len(GEOGRAPHIES) + len(GENDERS)
+    assert len(ONE_HOT) == len(GEOGRAPHIES)
 
 
 def test_split_is_exact_stratified_and_deterministic(spark):

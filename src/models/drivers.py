@@ -4,7 +4,7 @@ import shap
 
 LEVERS = {
     "Customer": ["CreditScore", "Age", "Geography_France", "Geography_Germany", "Geography_Spain",
-                 "Gender_Female", "Gender_Male", "is_senior", "EstimatedSalary"],
+                 "is_senior", "EstimatedSalary"],
     "Product": ["NumOfProducts", "HasCrCard", "Balance", "zero_balance", "balance_to_salary", "products_per_tenure"],
     "Engagement": ["IsActiveMember", "Tenure", "active_x_products"],
 }

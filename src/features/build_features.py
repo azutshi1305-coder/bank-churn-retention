@@ -12,7 +12,7 @@ from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 
 from src.features.transform import (
-    DESCRIPTIONS, ENGINEERED, FEATURE_COLUMNS, FEATURE_DTYPES, GENDERS, GEOGRAPHIES,
+    AUDIT_COLUMNS, AUDIT_DTYPES, DESCRIPTIONS, ENGINEERED, FEATURE_COLUMNS, FEATURE_DTYPES, GENDERS, GEOGRAPHIES,
     ONE_HOT, RAW_NUMERIC, SENIOR_AGE,
 )
 
@@ -57,7 +57,8 @@ def add_split(df: DataFrame) -> DataFrame:
 
 
 def add_features(df: DataFrame) -> DataFrame:
-    """Adds every feature in FEATURE_COLUMNS (same formulas as transform.transform) and casts them to the schema dtypes."""
+    """Adds every feature in FEATURE_COLUMNS (same formulas as transform.transform) plus the Gender audit columns,
+    and casts them to the schema dtypes."""
     for g in GEOGRAPHIES:
         df = df.withColumn(f"Geography_{g}", F.col("Geography") == g)
     for g in GENDERS:
@@ -69,6 +70,8 @@ def add_features(df: DataFrame) -> DataFrame:
             .withColumn("active_x_products", F.col("IsActiveMember") * F.col("NumOfProducts")))
     for c in FEATURE_COLUMNS:
         df = df.withColumn(c, F.col(c).cast(SPARK_TYPE[FEATURE_DTYPES[c]]))
+    for c in AUDIT_COLUMNS:
+        df = df.withColumn(c, F.col(c).cast(SPARK_TYPE[AUDIT_DTYPES[c]]))
     return df
 
 
@@ -76,6 +79,8 @@ def write_schema(out: DataFrame) -> None:
     actual = {name: ("int64" if t == "bigint" else "float64" if t == "double" else t) for name, t in out.dtypes}
     for c in FEATURE_COLUMNS:
         assert actual[c] == FEATURE_DTYPES[c], f"{c}: spark gave {actual[c]}, expected {FEATURE_DTYPES[c]}"
+    for c in AUDIT_COLUMNS:
+        assert actual[c] == AUDIT_DTYPES[c], f"{c}: spark gave {actual[c]}, expected {AUDIT_DTYPES[c]}"
 
     def kind(c):
         return "raw" if c in RAW_NUMERIC else "one_hot" if c in ONE_HOT else "engineered"
@@ -84,11 +89,17 @@ def write_schema(out: DataFrame) -> None:
         "features": [{"name": c, "dtype": FEATURE_DTYPES[c], "kind": kind(c),
                       **({"description": DESCRIPTIONS[c]} if c in ENGINEERED else {})}
                      for c in FEATURE_COLUMNS],
+        "audit_columns": [{"name": c, "dtype": AUDIT_DTYPES[c],
+                           "note": "Gender one-hot, kept only for fairness audits and proxy checks; never a model input"}
+                          for c in AUDIT_COLUMNS],
+        "excluded_from_model": {"Gender": "Stage 5 ablation: dropping it cost no measurable ROC-AUC/Brier and a PR-AUC change "
+                                          "indistinguishable from noise; avoids relying on a sensitive attribute"},
         "target": TARGET,
         "split_column": SPLIT_COL,
         "split": {"method": "exact stratified on Exited, ordered by seeded hash of CustomerId",
                   "train_fraction": TRAIN_FRACTION, "seed": SEED, "values": ["train", "test"]},
-        "categories": {"Geography": GEOGRAPHIES, "Gender": GENDERS},
+        "categories": {"Geography": GEOGRAPHIES},
+        "audit_categories": {"Gender": GENDERS},
         "notes": "Identifiers dropped. No scaling applied; fit scalers on the train split only.",
     }
     SCHEMA_PATH.write_text(json.dumps(schema, indent=2) + "\n")
@@ -99,7 +110,7 @@ def build() -> DataFrame:
     df = add_features(add_split(read_raw(spark)))
     # back to original file order (the split window sorts by class); then drop identifiers
     out = (df.orderBy("RowNumber").drop(*IDENTIFIERS).withColumn(TARGET, F.col(TARGET).cast("long"))
-             .select(*FEATURE_COLUMNS, TARGET, SPLIT_COL))
+             .select(*FEATURE_COLUMNS, *AUDIT_COLUMNS, TARGET, SPLIT_COL))
     write_schema(out)
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     # Spark's own parquet writer needs Hadoop's winutils.exe on Windows; at 10k rows, collecting and
@@ -112,6 +123,6 @@ if __name__ == "__main__":
     result = build()
     print(f"wrote {OUT_PATH} and {SCHEMA_PATH}")
     print(f"rows={result.count()}, columns={len(result.columns)} "
-          f"({len(FEATURE_COLUMNS)} features + {TARGET} + {SPLIT_COL})")
+          f"({len(FEATURE_COLUMNS)} features + {len(AUDIT_COLUMNS)} audit + {TARGET} + {SPLIT_COL})")
     (result.groupBy(SPLIT_COL).agg(F.count("*").alias("rows"), F.round(F.avg(TARGET) * 100, 2).alias("churn_pct"))
            .orderBy(SPLIT_COL).show())

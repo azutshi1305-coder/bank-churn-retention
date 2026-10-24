@@ -110,20 +110,22 @@ def net_value_curve(p, value, retention_success_rate, offer_cost, order="benefit
                          "cumulative_net_value": np.concatenate([[0.0], np.cumsum(benefit[idx])])})
 
 
-def segment_fields(X):
+def segment_fields(X, audit):
+    """Segment labels. Gender comes from the audit columns (the model does not use it): it is exported only so
+    the dashboard can check whether the campaign treats men and women proportionately."""
     geography = X[[c for c in X.columns if c.startswith("Geography_")]].idxmax(axis=1).str.replace("Geography_", "")
-    gender = X[[c for c in X.columns if c.startswith("Gender_")]].idxmax(axis=1).str.replace("Gender_", "")
+    gender = audit[[c for c in audit.columns if c.startswith("Gender_")]].idxmax(axis=1).str.replace("Gender_", "")
     age_band = pd.cut(X["Age"], AGE_BINS, labels=AGE_LABELS, right=False).astype(str)
     return pd.DataFrame({"Geography": geography, "Gender": gender, "age_band": age_band})
 
 
 def score_test():
     """Test customers scored by the registered champion (no identifiers; test_index is an anonymous row number)."""
-    X, y = load_test_features()
+    X, y, audit = load_test_features(audit=True)
     p = load_champion().predict_proba(X)[:, 1]
     keep = ["Age", "NumOfProducts", "IsActiveMember", "HasCrCard", "zero_balance", "Balance", "Tenure", "CreditScore"]
     head = pd.DataFrame({"test_index": np.arange(len(X)), "risk": p, "churned_actual": y})
-    return pd.concat([head, segment_fields(X), X[keep]], axis=1)
+    return pd.concat([head, segment_fields(X, audit), X[keep]], axis=1)
 
 
 def build_reports(assumptions=None, capacity_shares=None):

@@ -56,16 +56,6 @@
       "kind": "one_hot"
     },
     {
-      "name": "Gender_Female",
-      "dtype": "int64",
-      "kind": "one_hot"
-    },
-    {
-      "name": "Gender_Male",
-      "dtype": "int64",
-      "kind": "one_hot"
-    },
-    {
       "name": "zero_balance",
       "dtype": "int64",
       "kind": "engineered",
@@ -96,6 +86,21 @@
       "description": "IsActiveMember * NumOfProducts: product depth, counted only for active members."
     }
   ],
+  "audit_columns": [
+    {
+      "name": "Gender_Female",
+      "dtype": "int64",
+      "note": "Gender one-hot, kept only for fairness audits and proxy checks; never a model input"
+    },
+    {
+      "name": "Gender_Male",
+      "dtype": "int64",
+      "note": "Gender one-hot, kept only for fairness audits and proxy checks; never a model input"
+    }
+  ],
+  "excluded_from_model": {
+    "Gender": "Stage 5 ablation: dropping it cost no measurable ROC-AUC/Brier and a PR-AUC change indistinguishable from noise; avoids relying on a sensitive attribute"
+  },
   "target": "Exited",
   "split_column": "split",
   "split": {
@@ -112,7 +117,9 @@
       "France",
       "Germany",
       "Spain"
-    ],
+    ]
+  },
+  "audit_categories": {
     "Gender": [
       "Female",
       "Male"
