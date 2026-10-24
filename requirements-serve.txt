@@ -1,0 +1,15 @@
+# Runtime dependencies of the API only, pinned to the versions the model was built and tested with.
+# Install with:  pip install -r requirements-serve.txt
+fastapi==0.162.0
+uvicorn==0.54.0
+pydantic==2.14.1
+pandas==3.1.0
+numpy==2.4.6
+scikit-learn==1.9.1
+scipy==1.17.1            # required by scikit-learn and xgboost
+# xgboost-cpu is the CPU-only build of the same release (same `import xgboost`, same version as the training venv).
+# The plain xgboost Linux wheel is ~132 MB because it bundles GPU support, which this API does not use.
+xgboost-cpu==3.2.0
+mlflow-skinny==3.17.2    # loads the MLflow-format model from disk; no tracking server or database is needed
+skops==0.16.0            # the exported model is stored in skops format
+pyyaml==6.0.3

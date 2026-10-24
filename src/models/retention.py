@@ -12,9 +12,9 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from src.config.economics import CONFIG_PATH, customer_value, expected_net_benefit, load_assumptions  # noqa: F401  (re-exported)
 from src.models.registry import ROOT, load_champion, load_test_features
 
-CONFIG_PATH = ROOT / "src" / "config" / "retention_assumptions.yaml"
 REPORTS_DIR = ROOT / "reports"
 SCENARIOS = ("best", "base", "worst")
 RISK_RULES = ("threshold_0.5", "top_10pct", "top_20pct")
@@ -24,10 +24,6 @@ ADDITIVE = ["customers_targeted", "expected_churners_reached", "actual_churners_
             "value_retained", "campaign_cost", "net_value"]
 FORBIDDEN_COLUMNS = {"CustomerId", "Surname", "RowNumber"}
 AGE_BINS, AGE_LABELS = [0, 30, 40, 50, 60, 200], ["18-29", "30-39", "40-49", "50-59", "60+"]
-
-
-def load_assumptions(path=CONFIG_PATH):
-    return yaml.safe_load(Path(path).read_text())["scenarios"]
 
 
 def load_capacity(path=CONFIG_PATH):
@@ -62,15 +58,6 @@ def select_capacity(benefit, share):
     mask = np.zeros(len(benefit), dtype=bool)
     mask[top] = benefit[top] > 0
     return mask
-
-
-def customer_value(balance, n_products, net_interest_margin, annual_fee_per_product):
-    """One year of value: Balance x margin + NumOfProducts x fee."""
-    return balance * net_interest_margin + n_products * annual_fee_per_product
-
-
-def expected_net_benefit(p_churn, value, retention_success_rate, offer_cost):
-    return p_churn * retention_success_rate * value - offer_cost
 
 
 def select_targets(rule, p, benefit):

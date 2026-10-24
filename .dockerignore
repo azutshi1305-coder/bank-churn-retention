@@ -1,0 +1,14 @@
+.git
+.gitignore
+.venv
+data/
+mlruns/
+mlflow.db
+notebooks/
+reports/
+tests/
+sql/
+scripts/
+.pytest_cache
+**/__pycache__
+**/*.pyc

@@ -9,8 +9,9 @@ import pandas as pd
 import xgboost as xgb
 
 from src.api.bands import clip_probabilities, risk_band
+from src.config.economics import customer_value, expected_net_benefit, load_assumptions
 from src.features.transform import FEATURE_COLUMNS, transform
-from src.models.retention import customer_value, expected_net_benefit, load_assumptions
+
 
 N_DRIVERS = 3
 ASSUMPTION_NOTE = ("Illustrative assumptions, not bank figures: the dataset has no treatment data, so the retention success rate "

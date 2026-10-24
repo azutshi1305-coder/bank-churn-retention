@@ -9,6 +9,7 @@ import os
 import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, Request
@@ -18,9 +19,8 @@ from fastapi.responses import JSONResponse
 from src.api.bands import BAND_DESCRIPTIONS, PROB_CLIP
 from src.api.schemas import BatchRequest, BatchResponse, Customer, Health, ModelInfo, PredictResponse
 from src.api.service import ChampionService
-from src.models.registry import ROOT
 
-DEFAULT_MODEL_PATH = ROOT / "artifacts" / "champion"
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parents[2] / "artifacts" / "champion"
 
 logger = logging.getLogger("churn_api")
 if not logger.handlers:
