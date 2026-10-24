@@ -1,5 +1,14 @@
-# Bank churn scoring API. Build:  docker build -t bank-churn-api:local .
-# Run:                            docker run --rm -p 8000:8000 bank-churn-api:local
+# Bank churn scoring API.
+#   Build:  docker build -t bank-churn-api:local .
+#   Run:    docker run --rm -p 8000:8000 bank-churn-api:local
+#
+# Verified locally: builds; runs as uid 10001 (non-root); HEALTHCHECK reports healthy; runs with --read-only;
+# passes scripts/smoke_test.py; predictions identical to the Windows venv on 50 test customers
+# (scripts/parity_check.py). Size is ~900 MB as reported by Docker (~670 MB of files inside); ~200 MB resident after the smoke test.
+#
+# CPU limits: Python's os.cpu_count() reports the HOST's CPUs, not a container's limit, so XGBoost would start too
+# many threads under a CPU cap. Set XGB_NTHREADS to the vCPUs the container gets, e.g.
+#   docker run --rm --cpus 2 -e XGB_NTHREADS=2 -p 8000:8000 bank-churn-api:local
 
 # --- build stage: install pinned dependencies into a virtualenv (wheels only; nothing is compiled) ---
 FROM python:3.11-slim AS builder
