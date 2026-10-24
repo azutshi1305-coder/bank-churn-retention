@@ -1,16 +1,38 @@
 import json
+from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from src.features import build_features as bf
 from src.features.transform import (
     AUDIT_COLUMNS, FEATURE_COLUMNS, FEATURE_DTYPES, GEOGRAPHIES, ONE_HOT, audit_columns, transform,
 )
 
+ROOT = Path(__file__).resolve().parents[1]
+RAW_PATH = ROOT / "data" / "raw" / "Churn_Modelling.csv"          # not tracked in git
+SCHEMA_PATH = ROOT / "src" / "features" / "feature_schema.json"
+needs_data = pytest.mark.skipif(not RAW_PATH.exists(), reason="needs data/raw (not tracked in git); Spark parity is checked locally")
+
+# A few raw customers (incl. tenure 0 and a zero balance) so the pure-pandas checks need no data files.
+SAMPLE = pd.DataFrame([
+    {"CreditScore": 619, "Geography": "France", "Gender": "Female", "Age": 42, "Tenure": 2, "Balance": 0.0,
+     "NumOfProducts": 1, "HasCrCard": 1, "IsActiveMember": 1, "EstimatedSalary": 101348.88},
+    {"CreditScore": 608, "Geography": "Spain", "Gender": "Male", "Age": 41, "Tenure": 1, "Balance": 83807.86,
+     "NumOfProducts": 1, "HasCrCard": 0, "IsActiveMember": 1, "EstimatedSalary": 112542.58},
+    {"CreditScore": 502, "Geography": "Germany", "Gender": "Female", "Age": 50, "Tenure": 0, "Balance": 159660.8,
+     "NumOfProducts": 3, "HasCrCard": 1, "IsActiveMember": 0, "EstimatedSalary": 113931.57},
+])
+
 
 @pytest.fixture(scope="module")
-def spark():
+def bf():
+    pytest.importorskip("pyspark")
+    from src.features import build_features
+    return build_features
+
+
+@pytest.fixture(scope="module")
+def spark(bf):
     session = bf.get_spark()
     yield session
     session.stop()
@@ -18,10 +40,11 @@ def spark():
 
 @pytest.fixture(scope="module")
 def raw():
-    return pd.read_csv(bf.RAW_PATH)
+    return pd.read_csv(RAW_PATH)
 
 
-def test_spark_and_pandas_features_are_identical(spark, raw):
+@needs_data
+def test_spark_and_pandas_features_are_identical(bf, spark, raw):
     spark_feats = (bf.add_features(bf.read_raw(spark).withColumn("CustomerId", bf.F.col("CustomerId").cast("long")))
                    .select("CustomerId", *FEATURE_COLUMNS).toPandas()
                    .set_index("CustomerId").sort_index())
@@ -32,28 +55,29 @@ def test_spark_and_pandas_features_are_identical(spark, raw):
     pd.testing.assert_frame_equal(spark_feats, pandas_feats, check_exact=True)
 
 
-def test_spark_and_pandas_audit_columns_are_identical(spark, raw):
+@needs_data
+def test_spark_and_pandas_audit_columns_are_identical(bf, spark, raw):
     spark_audit = (bf.add_features(bf.read_raw(spark).withColumn("CustomerId", bf.F.col("CustomerId").cast("long")))
                    .select("CustomerId", *AUDIT_COLUMNS).toPandas().set_index("CustomerId").sort_index())
     pandas_audit = audit_columns(raw.set_index("CustomerId")).sort_index()
     pd.testing.assert_frame_equal(spark_audit, pandas_audit, check_exact=True)
 
 
-def test_gender_is_not_a_model_feature(raw):
+def test_gender_is_not_a_model_feature():
     assert not any(c.startswith("Gender") for c in FEATURE_COLUMNS)
-    assert not any(c.startswith("Gender") for c in transform(raw).columns)
+    assert not any(c.startswith("Gender") for c in transform(SAMPLE).columns)
     assert AUDIT_COLUMNS == ["Gender_Female", "Gender_Male"]
 
 
-def test_dtypes_match_schema_file(raw):
-    schema = json.loads(bf.SCHEMA_PATH.read_text())
+def test_dtypes_match_schema_file():
+    schema = json.loads(SCHEMA_PATH.read_text())
     assert [f["name"] for f in schema["features"]] == FEATURE_COLUMNS
     assert {f["name"]: f["dtype"] for f in schema["features"]} == FEATURE_DTYPES
-    out = transform(raw)
+    out = transform(SAMPLE)
     assert {c: str(t) for c, t in out.dtypes.items()} == FEATURE_DTYPES
 
 
-def test_tenure_zero_is_finite_and_formulas(raw):
+def test_tenure_zero_is_finite_and_formulas():
     row = pd.DataFrame([{
         "CreditScore": 600, "Geography": "Germany", "Gender": "Female", "Age": 50, "Tenure": 0,
         "Balance": 0.0, "NumOfProducts": 3, "HasCrCard": 1, "IsActiveMember": 1, "EstimatedSalary": 50000.0,
@@ -65,7 +89,7 @@ def test_tenure_zero_is_finite_and_formulas(raw):
     assert f["active_x_products"] == 3
     assert f["Geography_Germany"] == 1 and f["Geography_France"] == 0
     assert "Gender_Female" not in f.index          # Gender is read upstream and ignored
-    assert transform(raw)["products_per_tenure"].replace([float("inf")], float("nan")).notna().all()
+    assert transform(SAMPLE)["products_per_tenure"].replace([float("inf")], float("nan")).notna().all()
 
 
 def test_unseen_category_gives_all_zero_one_hot():
@@ -77,7 +101,8 @@ def test_unseen_category_gives_all_zero_one_hot():
     assert len(ONE_HOT) == len(GEOGRAPHIES)
 
 
-def test_split_is_exact_stratified_and_deterministic(spark):
+@needs_data
+def test_split_is_exact_stratified_and_deterministic(bf, spark):
     def assignment():
         df = bf.add_split(bf.read_raw(spark))
         return df.select("CustomerId", "Exited", "split").toPandas().set_index("CustomerId").sort_index()

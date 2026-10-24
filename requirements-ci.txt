@@ -1,0 +1,8 @@
+# Test environment for CI. The serving pins come first so the exported model (saved with scikit-learn 1.9.1,
+# xgboost 3.2.0, ...) loads with exactly the versions it was built with; the rest are test tools, pinned to the
+# versions used locally. PySpark is not installed in CI: the Spark parity tests need data/ and skip without it.
+-r requirements-serve.txt
+pytest==9.1.1
+httpx==0.28.1
+shap==0.51.0
+matplotlib==3.11.2
