@@ -1,0 +1,137 @@
+{
+  "model_name": "bank-churn-model",
+  "model_version": "2",
+  "alias": "champion",
+  "run_id": "2ea495d58a2e4cbda3f74a334600d3a5",
+  "training_date": "2026-10-23T22:41:24+00:00",
+  "exported_at": "2026-10-24T06:52:19+00:00",
+  "model_description": "Calibrated XGBoost without Gender (16 features). Promoted in Stage 5 after an ablation showed no measurable loss; supersedes v1 (with Gender), which is kept for comparison.",
+  "calibration_method": "isotonic",
+  "n_features": 16,
+  "feature_schema": {
+    "features": [
+      {
+        "name": "CreditScore",
+        "dtype": "int64"
+      },
+      {
+        "name": "Age",
+        "dtype": "int64"
+      },
+      {
+        "name": "Tenure",
+        "dtype": "int64"
+      },
+      {
+        "name": "Balance",
+        "dtype": "float64"
+      },
+      {
+        "name": "NumOfProducts",
+        "dtype": "int64"
+      },
+      {
+        "name": "HasCrCard",
+        "dtype": "int64"
+      },
+      {
+        "name": "IsActiveMember",
+        "dtype": "int64"
+      },
+      {
+        "name": "EstimatedSalary",
+        "dtype": "float64"
+      },
+      {
+        "name": "Geography_France",
+        "dtype": "int64"
+      },
+      {
+        "name": "Geography_Germany",
+        "dtype": "int64"
+      },
+      {
+        "name": "Geography_Spain",
+        "dtype": "int64"
+      },
+      {
+        "name": "zero_balance",
+        "dtype": "int64"
+      },
+      {
+        "name": "balance_to_salary",
+        "dtype": "float64"
+      },
+      {
+        "name": "products_per_tenure",
+        "dtype": "float64"
+      },
+      {
+        "name": "is_senior",
+        "dtype": "int64"
+      },
+      {
+        "name": "active_x_products",
+        "dtype": "int64"
+      }
+    ],
+    "excluded_from_model": {
+      "Gender": "Stage 5 ablation: dropping it cost no measurable ROC-AUC/Brier and a PR-AUC change indistinguishable from noise; avoids relying on a sensitive attribute"
+    }
+  },
+  "metrics": {
+    "cv_pr_auc_mean": 0.7033803324232546,
+    "cv_pr_auc_std": 0.015002486118313311,
+    "cv_roc_auc_mean": 0.8617330084464176,
+    "test_roc_auc": 0.8647106274224918,
+    "test_pr_auc": 0.6870976377151439,
+    "test_brier": 0.10405007023216509,
+    "test_precision_at_0.5": 0.743801652892562,
+    "test_recall_at_0.5": 0.44226044226044225,
+    "test_lift_top10": 3.980343980343981,
+    "test_lift_top20": 2.9852579852579857,
+    "test_roc_auc_ci_low": 0.8438829757129199,
+    "test_roc_auc_ci_high": 0.8826213999395859,
+    "test_pr_auc_ci_low": 0.6397620930109654,
+    "test_pr_auc_ci_high": 0.727892251872783,
+    "test_brier_ci_low": 0.0949393340083939,
+    "test_brier_ci_high": 0.11400813340543745
+  },
+  "metrics_note": "Registered-model metrics, before serving-time clipping. test_* are on the held-out 20% test split (2,000 customers); cv_* are 5-fold CV on train.",
+  "probability_clip": {
+    "low": 0.005,
+    "high": 0.995,
+    "applied_in": "the API service layer; the registered model and the exported model are unchanged",
+    "reason": "isotonic calibration can return exactly 0 or 1, which overstates certainty about an individual customer",
+    "test_rows_clipped_low": 1,
+    "test_rows_clipped_high": 12,
+    "test_rows": 2000,
+    "test_metrics_before_clipping": {
+      "roc_auc": 0.8647106274224918,
+      "pr_auc": 0.6870976377151439,
+      "brier": 0.10405007023216509
+    },
+    "test_metrics_after_clipping": {
+      "roc_auc": 0.8647106274224918,
+      "pr_auc": 0.6870976377151439,
+      "brier": 0.10405023104880523
+    }
+  },
+  "risk_bands": {
+    "low": {
+      "definition": "churn probability below 20% (below the ~20% average churn rate)",
+      "share_of_test_customers": 0.7115,
+      "observed_churn_rate_on_test": 0.07730147575544624
+    },
+    "medium": {
+      "definition": "churn probability from 20% up to 50%",
+      "share_of_test_customers": 0.1675,
+      "observed_churn_rate_on_test": 0.3492537313432836
+    },
+    "high": {
+      "definition": "churn probability of 50% or more",
+      "share_of_test_customers": 0.121,
+      "observed_churn_rate_on_test": 0.743801652892562
+    }
+  }
+}

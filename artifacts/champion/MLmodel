@@ -1,0 +1,52 @@
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict_proba
+    python_version: 3.11.9
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.1
+    skops_trusted_types:
+    - sklearn.tree._tree.Tree
+    - sklearn.calibration._CalibratedClassifier
+    - sklearn.calibration._SigmoidCalibration
+    - sklearn.isotonic.IsotonicRegression
+    - sklearn.model_selection._split.StratifiedKFold
+    - xgboost.core.Booster
+    - xgboost.sklearn.XGBClassifier
+is_signature_from_type_hint: false
+mlflow_version: 3.17.2
+model_id: m-d3959fd40f7c4600bd001db78f1eaeb6
+model_size_bytes: 4670326
+model_uuid: m-d3959fd40f7c4600bd001db78f1eaeb6
+prompts: null
+run_id: 2ea495d58a2e4cbda3f74a334600d3a5
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "long", "name": "CreditScore", "required": true}, {"type": "long",
+    "name": "Age", "required": true}, {"type": "long", "name": "Tenure", "required":
+    true}, {"type": "double", "name": "Balance", "required": true}, {"type": "long",
+    "name": "NumOfProducts", "required": true}, {"type": "long", "name": "HasCrCard",
+    "required": true}, {"type": "long", "name": "IsActiveMember", "required": true},
+    {"type": "double", "name": "EstimatedSalary", "required": true}, {"type": "long",
+    "name": "Geography_France", "required": true}, {"type": "long", "name": "Geography_Germany",
+    "required": true}, {"type": "long", "name": "Geography_Spain", "required": true},
+    {"type": "long", "name": "zero_balance", "required": true}, {"type": "double",
+    "name": "balance_to_salary", "required": true}, {"type": "double", "name": "products_per_tenure",
+    "required": true}, {"type": "long", "name": "is_senior", "required": true}, {"type":
+    "long", "name": "active_x_products", "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1,
+    2]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-10-23 22:41:25.680559'
