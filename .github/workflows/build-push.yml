@@ -1,8 +1,9 @@
 # CI for the churn API: run the tests, build the image, smoke-test the container, and (when enabled) push to ECR.
 #
-# The push job is INACTIVE until two repository variables exist (Settings -> Secrets and variables -> Actions ->
-# Variables): ECR_PUSH_ENABLED=true and AWS_ROLE_ARN=<role to assume via GitHub OIDC>. No AWS keys are ever stored in
-# GitHub; see docs/deployment.md for the OIDC role design. Without those variables only test + image run.
+# The push job is INACTIVE until the repository variable ECR_PUSH_ENABLED is "true" (Settings -> Secrets and variables ->
+# Actions -> Variables) and two repository secrets exist: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY, the access key of the
+# IAM user bank-churn-ci-pusher (can only push to the one ECR repository). GitHub OIDC would avoid stored keys and is the
+# preferred design, but the organization blocks it; see docs/deployment.md. Without the variable only test + image run.
 name: build-push
 
 on:
@@ -105,7 +106,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      id-token: write   # lets the job request a GitHub OIDC token to assume the AWS role
     env:
       TAG: ${{ needs.image.outputs.tag }}
     steps:
@@ -116,7 +116,8 @@ jobs:
         run: docker load -i image.tar.gz
       - uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Log in to ECR
         id: ecr
