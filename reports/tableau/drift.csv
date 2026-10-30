@@ -1,0 +1,69 @@
+scenario,description,simulated,kind,name,psi,band
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,EstimatedSalary,0.009966,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,CreditScore,0.007412,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,balance_to_salary,0.007365,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,Age,0.006468,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,Tenure,0.004921,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,products_per_tenure,0.003339,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,active_x_products,0.002166,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,Balance,0.001618,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,NumOfProducts,0.001542,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,is_senior,0.000628,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,IsActiveMember,0.000361,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,HasCrCard,0.000319,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,Geography_France,0.000132,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,Geography_Spain,8.6e-05,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,Geography_Germany,1.6e-05,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,feature,zero_balance,3e-06,stable
+actual_train_vs_test,Actual: train (reference) vs test (current),0,score,predicted_score,0.003298,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,Age,0.337545,significant
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,is_senior,0.057729,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,EstimatedSalary,0.009966,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,CreditScore,0.007412,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,balance_to_salary,0.007365,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,Tenure,0.004921,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,products_per_tenure,0.003339,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,active_x_products,0.002166,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,Balance,0.001618,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,NumOfProducts,0.001542,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,IsActiveMember,0.000361,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,HasCrCard,0.000319,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,Geography_France,0.000132,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,Geography_Spain,8.6e-05,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,Geography_Germany,1.6e-05,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,feature,zero_balance,3e-06,stable
+sim_older_customers,SIMULATED: Older customer base (+5 years of Age),1,score,predicted_score,0.107058,moderate
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,active_x_products,0.102398,moderate
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,IsActiveMember,0.100351,moderate
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,EstimatedSalary,0.009966,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,CreditScore,0.007412,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,balance_to_salary,0.007365,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,Age,0.006468,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,Tenure,0.004921,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,products_per_tenure,0.003339,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,Balance,0.001618,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,NumOfProducts,0.001542,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,is_senior,0.000628,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,HasCrCard,0.000319,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,Geography_France,0.000132,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,Geography_Spain,8.6e-05,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,Geography_Germany,1.6e-05,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,feature,zero_balance,3e-06,stable
+sim_fewer_active_members,SIMULATED: 30% of active members lapse,1,score,predicted_score,0.014405,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,Geography_Germany,0.275814,significant
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,Geography_France,0.105765,moderate
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,balance_to_salary,0.08376,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,zero_balance,0.067648,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,Balance,0.065593,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,Geography_Spain,0.051899,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,Tenure,0.019712,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,products_per_tenure,0.014781,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,Age,0.011912,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,EstimatedSalary,0.01179,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,CreditScore,0.006915,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,NumOfProducts,0.006623,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,active_x_products,0.00512,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,is_senior,0.003417,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,IsActiveMember,0.001682,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,feature,HasCrCard,0.000103,stable
+sim_germany_share_doubles,SIMULATED: Germany's share of customers doubles,1,score,predicted_score,0.035217,stable

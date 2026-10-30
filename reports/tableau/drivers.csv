@@ -1,0 +1,17 @@
+rank,feature,lever,mean_abs_shap,share_pct
+1,Age,Customer,0.783168,30.187761
+2,NumOfProducts,Product,0.607833,23.42933
+3,IsActiveMember,Engagement,0.286716,11.051656
+4,Geography_Germany,Customer,0.165209,6.368092
+5,active_x_products,Engagement,0.147542,5.68712
+6,Balance,Product,0.121765,4.693502
+7,balance_to_salary,Product,0.093794,3.615371
+8,is_senior,Customer,0.07627,2.939896
+9,EstimatedSalary,Customer,0.071643,2.761542
+10,CreditScore,Customer,0.063443,2.445442
+11,Tenure,Engagement,0.044666,1.721672
+12,Geography_France,Customer,0.041615,1.604092
+13,zero_balance,Product,0.035067,1.351687
+14,products_per_tenure,Product,0.028668,1.105027
+15,Geography_Spain,Customer,0.014134,0.544796
+16,HasCrCard,Product,0.01279,0.493018
