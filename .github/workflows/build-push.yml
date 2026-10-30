@@ -122,6 +122,10 @@ jobs:
       - name: Log in to ECR
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
+      - name: Mask the AWS account ID in logs
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: echo "::add-mask::${REGISTRY%%.*}"   # the registry host starts with the 12-digit account ID
       - name: Push (skipped if the immutable tag already exists)
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
@@ -134,9 +138,18 @@ jobs:
           docker push "$REGISTRY/$ECR_REPOSITORY:$TAG"
       - name: Scan findings and compressed size
         run: |
-          aws ecr wait image-scan-complete --repository-name "$ECR_REPOSITORY" --image-id imageTag="$TAG"
           size="$(aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$TAG" --query 'imageDetails[0].imageSizeInBytes' --output text)"
-          findings="$(aws ecr describe-image-scan-findings --repository-name "$ECR_REPOSITORY" --image-id imageTag="$TAG" --query 'imageScanFindings.findingSeverityCounts' --output json)"
+          # The scan record can appear a few seconds after the push, so `wait` fails with ScanNotFoundException if called too early.
+          # Retry briefly; a scan that is still missing is a warning, not a failed push.
+          findings="scan not available yet"
+          for i in 1 2 3 4 5 6; do
+            if aws ecr wait image-scan-complete --repository-name "$ECR_REPOSITORY" --image-id imageTag="$TAG" 2>/dev/null; then
+              findings="$(aws ecr describe-image-scan-findings --repository-name "$ECR_REPOSITORY" --image-id imageTag="$TAG" --query 'imageScanFindings.findingSeverityCounts' --output json | tr -d ' \n')"
+              break
+            fi
+            echo "scan not ready (attempt $i of 6)"; sleep 10
+          done
+          [ "$findings" = "scan not available yet" ] && echo "::warning::ECR scan for $TAG was not available after retries; check the repository's scan results"
           {
             echo "### Image pushed to ECR"
             echo "- tag: \`$TAG\`"
